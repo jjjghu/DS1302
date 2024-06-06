@@ -9,9 +9,14 @@ void setupDS1302(RtcDS1302<ThreeWire> Rtc);
 void printDateTime(const RtcDateTime &dt);
 
 void displayYear(RtcDateTime now);
-void displayMonth(RtcDateTime now);
+void displayMD(RtcDateTime now);
 void displayHM(RtcDateTime now);
 void displayMS(RtcDateTime now);
+
+void displayDay(RtcDateTime now);
+void displayHour(RtcDateTime now);
+void displayMinute(RtcDateTime now);
+void displaySecond(RtcDateTime now);
 
 void displayDigitAtPosition(int digit, int position);
 void displayDigit(int digit);

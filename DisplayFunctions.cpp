@@ -72,7 +72,7 @@ void displayYear(RtcDateTime now) {
   displayDigitAtPosition(yearTens, D3);
   displayDigitAtPosition(yearUnits, D4);
 }
-void displayMonth(RtcDateTime now) {
+void displayMD(RtcDateTime now) {
   int month = now.Month();
   int day = now.Day();
   int monthTens = month / 10;
@@ -110,6 +110,46 @@ void displayMS(RtcDateTime now) {
   displayDigitAtPosition(minuteUnits, D2);
   displayDigitAtPosition(secondTens, D3);
   displayDigitAtPosition(secondUnits, D4);
+}
+void displayDay(RtcDateTime now) {
+  int day = now.Day();
+  int dayTens = day / 10;
+  int dayUnits = day % 10;
+
+  displayDigitAtPosition(dayTens, D1);
+  displayDigitAtPosition(dayUnits, D2);
+  displayDigitAtPosition(0, D3);
+  displayDigitAtPosition(0, D4);
+}
+void displayHour(RtcDateTime now) {
+  int hour = now.Hour();
+  int hourTens = hour / 10;
+  int hourUnits = hour % 10;
+
+  displayDigitAtPosition(hourTens, D1);
+  displayDigitAtPosition(hourUnits, D2);
+  displayDigitAtPosition(0, D3);
+  displayDigitAtPosition(0, D4);
+}
+void displayMinute(RtcDateTime now) {
+  int minutes = now.Minute();
+  int minuteTens = minutes / 10;
+  int minuteUnits = minutes % 10;
+
+  displayDigitAtPosition(minuteTens, D1);
+  displayDigitAtPosition(minuteUnits, D2);
+  displayDigitAtPosition(0, D3);
+  displayDigitAtPosition(0, D4);
+}
+void displaySecond(RtcDateTime now) {
+  int seconds = now.Second();
+  int secondTens = seconds / 10;
+  int secondUnits = seconds % 10;
+
+  displayDigitAtPosition(secondTens, D1);
+  displayDigitAtPosition(secondUnits, D2);
+  displayDigitAtPosition(0, D3);
+  displayDigitAtPosition(0, D4);
 }
 void displayDigitAtPosition(int digit, int position) {
   // 根據需要選擇顯示的位置

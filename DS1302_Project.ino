@@ -22,9 +22,15 @@ const int D4 = A1;
 #define buttonB 3
 unsigned long prevTimeA = 0;
 unsigned long prevTimeB = 0;
-bool PressingB = false;  // 預設為沒按下
-const int interval = 500;
 
+// 按鈕 B 需要判斷長按
+volatile bool buttonPressedB = false;  // 預設為沒按下
+volatile unsigned long pressStartTimeB = 0;
+volatile unsigned long pressDurationB = 0;
+volatile unsigned long lastInterruptTimeB = 0;
+//長按設定為 1000 ms 
+const unsigned long longPressInterval = 1000;
+const unsigned long debounceDelay = 50;
 // 連接 DS1302
 ThreeWire myWire(IO, SCLK, CE);  // IO, SCLK, CE
 RtcDS1302<ThreeWire> Rtc(myWire);
@@ -37,10 +43,12 @@ const int showMS = 3;
 const int stateSize = 4;  // 加入 state 需要更改
 int curState = 3;
 
+bool settingMode = false;  // 設定模式標誌
+int settingItem = 0;       // 當前設定項目
 
 void setup() {
   Serial.begin(57600);
-  // setupDS1302(Rtc);  // 初始化 DS1302, 只需要在第一次執行時加入就可以了
+  setupDS1302(Rtc);  // 初始化 DS1302, 只需要在第一次執行時加入就可以了
 
   pinMode(pinA, OUTPUT);  // 顯示器的七個位置
   pinMode(pinB, OUTPUT);
@@ -70,7 +78,22 @@ void loop() {
   int hour = now.Hour();
   int minutes = now.Minute();
   int seconds = now.Second();
-// ---------------------------------------------------- //
+  if(buttonPressedB)
+  {
+    noInterrupts();
+    unsigned long duration = pressDurationB;
+    buttonPressedB = false;
+    interrupts();
+    if(duration >= longPressInterval)
+    {
+      Serial.println("Long Press Detected");
+    }
+    else
+    {
+      Serial.println("Short Press Detected");
+    }
+  }
+  // ----------------------------------------------------模擬輸入, 可設定時間 //
   if (Serial.available()) {
     String input = Serial.readString();
     if (input.length() == 14) {  // 確保輸入的長度正確
@@ -90,22 +113,35 @@ void loop() {
       Serial.println("Invalid input. Please enter date and time as YYYYMMDDHHMMSS:");
     }
   }
-// ---------------------------------------------------- //
+  // ---------------------------------------------------- //
   // 列印結果
   switch (curState) {
-    case showYear: displayYear(now); break;    // 顯示年份
-    case showMonth: displayMonth(now); break;  // 月份 + 日期
-    case showHM: displayHM(now); break;        // 小時 + 分鐘
-    case showMS: displayMS(now); break;        // 分鐘 + 秒
+    case showYear: displayYear(now); break;  // 顯示年份
+    case showMonth: displayMD(now); break;   // 月份 + 日期
+    case showHM: displayHM(now); break;      // 小時 + 分鐘
+    case showMS: displayMS(now); break;      // 分鐘 + 秒
   }
 }
 void flashA()  // 硬體中斷, 切換狀態的按鈕
 {
-  if (millis() - prevTimeA > interval) {
-    curState = (curState + 1) % stateSize;
+  if (millis() - prevTimeA > debounceDelay) {
     prevTimeA = millis();
+    curState = (curState + 1) % stateSize;
   }
 }
 void flashB() {
-  // debounce 忽略
+  unsigned long currentTime = millis();
+  if(currentTime - lastInterruptTimeB > debounceDelay)
+  {
+    if(digitalRead(buttonB) == LOW)
+    {
+      pressStartTimeB = currentTime;
+    }
+    else
+    {
+      pressDurationB = currentTime - pressStartTimeB;
+      buttonPressedB = true;
+    }
+    lastInterruptTimeB = currentTime;
+  }
 }
