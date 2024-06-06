@@ -1,4 +1,5 @@
 #include <RtcDS1302.h>
+// Pin 腳
 const int CE   = A2; // RST
 const int IO   = A3; // DAT
 const int SCLK = 4; // CLK
@@ -19,20 +20,36 @@ const int D2 = 13;
 unsigned long prevTimeA = 0;
 const int interval = 500;
 
+// 連接 DS1302
 ThreeWire myWire(IO,SCLK,CE); // IO, SCLK, CE
 RtcDS1302<ThreeWire> Rtc(myWire);
 
+// 當前顯示狀態
 const int showYear = 0;
 const int showMonth = 1;
 const int showHM = 2;
 const int showMS = 3;
 const int stateSize = 4; // 加入 state 需要更改
 int curState = 3;
+
+RtcDateTime now; // 全域變數, 在 loop 獲取當前時間, display函數使用
 void setup() 
 {
   Serial.begin(57600);
-  setupDS1302(); // 初始化 DS1302
+  // setupDS1302(); // 初始化 DS1302, 只需要在第一次執行時加入就可以了
 
+  // 記憶體寫入, 同上
+  // const char data[20] = "vepsdekol cs xkrxsdskN";
+  // uint8_t count = sizeof(data);
+  // uint8_t written = Rtc.SetMemory((const uint8_t*)data, count);
+  // if (written != count) 
+  // {
+  //     Serial.print("something didn't match, count = ");
+  //     Serial.print(count, DEC);
+  //     Serial.print(", written = ");
+  //     Serial.print(written, DEC);
+  //     Serial.println();
+  // }
   pinMode(pinA, OUTPUT); // 顯示器的七個位置
   pinMode(pinB, OUTPUT);     
   pinMode(pinC, OUTPUT);     
@@ -46,34 +63,61 @@ void setup()
   pinMode(D3, OUTPUT);  
   pinMode(D4, OUTPUT);
   
-  pinMode(buttonA, INPUT); // 按鈕輸入
+  pinMode(buttonA, INPUT_PULLUP); // 按鈕輸入
+  attachInterrupt(digitalPinToInterrupt(buttonA), flashA, FALLING); // 當 button 狀態從 HIGH 到 LOW, 觸發flash
   prevTimeA = millis();
 }
-RtcDateTime now;
 void loop() 
 {
-    now = Rtc.GetDateTime(); // 獲取當前 DS1302 的時間
-    if(millis() - prevTimeA > interval)
-    {
-      if(digitalRead(buttonA) == HIGH)
-      {
-        curState = (curState + 1) % stateSize;
-        prevTimeA = millis();
-      }
-    }
-    int year = now.Year();
-    int month = now.Month();
-    int day = now.Day();
-    int hour = now.Hour();
-    int minutes = now.Minute();
-    int seconds = now.Second();
-    switch(curState)
-    {
-      case showYear: displayYear(); break; // 顯示年份 
-      case showMonth: displayMonth(); break; // 月份 + 日期
-      case showHM: displayHM(); break; // 小時 + 分鐘
-      case showMS: displayMS(); break; // 分鐘 + 秒
-    }
+  now = Rtc.GetDateTime(); // 獲取當前 DS1302 的時間
+  int year = now.Year();
+  int month = now.Month();
+  int day = now.Day();
+  int hour = now.Hour();
+  int minutes = now.Minute();
+  int seconds = now.Second();
+  // 列印結果
+
+  switch(curState)
+  {
+    case showYear: displayYear(); break; // 顯示年份 
+    case showMonth: displayMonth(); break; // 月份 + 日期
+    case showHM: displayHM(); break; // 小時 + 分鐘
+    case showMS: displayMS(); break; // 分鐘 + 秒
+  }
+  // // 讀取記憶體資料開始
+  // uint8_t buff[20];
+  // const uint8_t count = sizeof(buff);
+  // // 獲取資料
+  // uint8_t gotten = Rtc.GetMemory(buff, count);
+
+  // if (gotten != count) 
+  // {
+  //     Serial.print("something didn't match, count = ");
+  //     Serial.print(count, DEC);
+  //     Serial.print(", gotten = ");
+  //     Serial.print(gotten, DEC);
+  //     Serial.println();
+  // }
+
+  // Serial.print("讀取資料 = (");
+  // Serial.print(gotten); // 大小
+  // Serial.print(") = \"");
+  // // print the string, but terminate if we get a null
+  // for (uint8_t ch = 0; ch < gotten && buff[ch]; ch++)
+  // {
+  //     Serial.print((char)buff[ch]);
+  // }
+  // Serial.println("\"");
+  // // 讀取記憶體資料結束
+}
+void flashA() // 硬體中斷, 切換狀態的按鈕
+{
+  if(millis() - prevTimeA > interval)
+  {
+    curState = (curState + 1) % stateSize;
+    prevTimeA = millis();
+  }
 }
 //////////////////////////////////////////////////////////
 void setupDS1302()
