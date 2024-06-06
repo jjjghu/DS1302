@@ -1,0 +1,38 @@
+  // // 讀取記憶體資料開始
+  // uint8_t buff[20];
+  // const uint8_t count = sizeof(buff);
+  // // 獲取資料
+  // uint8_t gotten = Rtc.GetMemory(buff, count);
+
+  // if (gotten != count)
+  // {
+  //     Serial.print("something didn't match, count = ");
+  //     Serial.print(count, DEC);
+  //     Serial.print(", gotten = ");
+  //     Serial.print(gotten, DEC);
+  //     Serial.println();
+  // }
+
+  // Serial.print("讀取資料 = (");
+  // Serial.print(gotten); // 大小
+  // Serial.print(") = \"");
+  // // print the string, but terminate if we get a null
+  // for (uint8_t ch = 0; ch < gotten && buff[ch]; ch++)
+  // {
+  //     Serial.print((char)buff[ch]);
+  // }
+  // Serial.println("\"");
+  // // 讀取記憶體資料結束
+
+  // 記憶體寫入, 同上
+  // const char data[20] = "vepsdekol cs xkrxsdskN";
+  // uint8_t count = sizeof(data);
+  // uint8_t written = Rtc.SetMemory((const uint8_t*)data, count);
+  // if (written != count)
+  // {
+  //     Serial.print("something didn't match, count = ");
+  //     Serial.print(count, DEC);
+  //     Serial.print(", written = ");
+  //     Serial.print(written, DEC);
+  //     Serial.println();
+  // }
