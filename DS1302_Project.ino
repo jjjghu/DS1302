@@ -17,7 +17,10 @@ const int D2 = 13;
 
 // 按鈕, 避免 debounce, 若要中斷, 需要使用 2, 3 Pin腳
 #define buttonA 2
+#define buttonB 3
 unsigned long prevTimeA = 0;
+unsigned long prevTimeB = 0;
+bool PressingB = false; // 預設為沒按下
 const int interval = 500;
 
 // 連接 DS1302
@@ -64,8 +67,11 @@ void setup()
   pinMode(D4, OUTPUT);
   
   pinMode(buttonA, INPUT_PULLUP); // 按鈕輸入
+  pinMode(buttonB, INPUT_PULLUP);
   attachInterrupt(digitalPinToInterrupt(buttonA), flashA, FALLING); // 當 button 狀態從 HIGH 到 LOW, 觸發flash
+  attachInterrupt(digitalPinToInterrupt(buttonB), flashB, CHANGE); // 改變時就會觸發
   prevTimeA = millis();
+  prevTimeB = millis();
 }
 void loop() 
 {
@@ -77,7 +83,6 @@ void loop()
   int minutes = now.Minute();
   int seconds = now.Second();
   // 列印結果
-
   switch(curState)
   {
     case showYear: displayYear(); break; // 顯示年份 
@@ -85,6 +90,7 @@ void loop()
     case showHM: displayHM(); break; // 小時 + 分鐘
     case showMS: displayMS(); break; // 分鐘 + 秒
   }
+
   // // 讀取記憶體資料開始
   // uint8_t buff[20];
   // const uint8_t count = sizeof(buff);
@@ -118,6 +124,10 @@ void flashA() // 硬體中斷, 切換狀態的按鈕
     curState = (curState + 1) % stateSize;
     prevTimeA = millis();
   }
+}
+void flashB()
+{
+  // debounce 忽略
 }
 //////////////////////////////////////////////////////////
 void setupDS1302()
