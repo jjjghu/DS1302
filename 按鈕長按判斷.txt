@@ -1,0 +1,63 @@
+#include <Arduino.h>
+
+// 按钮引脚定义
+const int buttonPin = 2;
+volatile bool buttonPressed = false;
+volatile unsigned long pressStartTime = 0;
+volatile unsigned long pressDuration = 0;
+volatile unsigned long lastInterruptTime = 0;
+
+// 定义长按的阈值 (以毫秒为单位)
+const unsigned long longPressThreshold = 1000;
+const unsigned long debounceDelay = 50; // 去抖动延迟 (以毫秒为单位)
+
+void setup() 
+{
+    pinMode(buttonPin, INPUT_PULLUP);
+    attachInterrupt(digitalPinToInterrupt(buttonPin), buttonISR, CHANGE);
+    Serial.begin(9600); // 设置波特率
+}
+
+void loop() 
+{
+    if (buttonPressed) 
+    {
+        noInterrupts();
+        unsigned long duration = pressDuration;
+        buttonPressed = false;
+        interrupts();
+
+        if (duration >= longPressThreshold) 
+        {
+            Serial.println("Long Press Detected");
+        } 
+        else 
+        {
+            Serial.println("Short Press Detected");
+        }
+    }
+}
+
+void buttonISR() 
+{
+    unsigned long currentTime = millis();
+    
+    // 检查是否在去抖动延迟时间内
+    if (currentTime - lastInterruptTime > debounceDelay) 
+    {
+        if (digitalRead(buttonPin) == LOW) 
+        {
+            // 按钮按下时记录时间
+            pressStartTime = currentTime;
+        } 
+        else 
+        {
+            // 按钮松开时计算按下的时间
+            pressDuration = currentTime - pressStartTime;
+            buttonPressed = true;
+        }
+    }
+    
+    // 更新最后一次中断触发的时间
+    lastInterruptTime = currentTime;
+}
