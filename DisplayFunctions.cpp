@@ -202,14 +202,17 @@ void displaySecond(RtcDateTime now)
   displayDigitAtPosition(secondTens, D3);
   displayDigitAtPosition(secondUnits, D4);
 }
-void displayDigitAtPosition(int digit, int position)
+void disableDisplay()
 {
-  // 根據需要選擇顯示的位置
   digitalWrite(D1, HIGH);
   digitalWrite(D2, HIGH);
   digitalWrite(D3, HIGH);
   digitalWrite(D4, HIGH);
-
+}
+void displayDigitAtPosition(int digit, int position)
+{
+  // 根據需要選擇顯示的位置
+  disableDisplay();
   digitalWrite(position, LOW);
   displayDigit(digit);
   delay(5);  // 延遲以減少閃爍

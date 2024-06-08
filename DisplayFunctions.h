@@ -19,6 +19,7 @@ void displayHour(RtcDateTime now, bool is12HourFormat);
 void displayMinute(RtcDateTime now);
 void displaySecond(RtcDateTime now);
 
+void disableDisplay();
 void displayDigitAtPosition(int digit, int position);
 void displayDigit(int digit);
 

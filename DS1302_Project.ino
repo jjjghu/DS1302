@@ -87,7 +87,7 @@ void loop()
     unsigned long duration = pressDurationB;
     buttonPressedB = false;
     interrupts();
-    if (duration >= longPressInterval)
+    if (duration > longPressInterval)
     {
       // 長按 (切換設定模式)
       Serial.println("偵測到長按!");
@@ -105,12 +105,21 @@ void loop()
       }
       else
       {
+        Serial.println("轉換小時!");
+        // Serial.println(is12HourFormat);
         is12HourFormat = !is12HourFormat; // 轉換小時制
       }
     }
   }
   // 列印結果
-  printResult(now);
+  if(settingMode)
+  {
+    BlinkprintResult(now);
+  }
+  else
+  {
+     printResult(now);
+  }
 }
 void settingTime(RtcDateTime &now)
 {
@@ -155,6 +164,26 @@ void settingTime(RtcDateTime &now)
   // 設置 RTC 時間
   Rtc.SetDateTime(now);
 }
+// 閃爍
+const int blinkInterval = 200;
+unsigned long lastBlinkTime = 0;
+bool blinkState = false;
+void BlinkprintResult(RtcDateTime &now)
+{
+  if(millis() - lastBlinkTime > blinkInterval)
+  {
+    blinkState = !blinkState;
+    lastBlinkTime = millis();
+  }
+  if(blinkState == true) // 睜開眼
+  {
+    printResult(now);
+  }
+  else // 閉眼
+  {
+    disableDisplay();
+  }
+}
 void printResult(RtcDateTime &now)
 {
   switch (curState)
@@ -175,7 +204,7 @@ void flashA()  // 硬體中斷, 切換狀態的按鈕
     prevTimeA = millis();
   }
 }
-void flashB()
+void flashB() // 需要判斷長短按
 {
   unsigned long currentTime = millis();
   if (currentTime - lastInterruptTimeB > debounceDelay)
