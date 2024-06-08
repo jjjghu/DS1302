@@ -20,8 +20,8 @@ AllowShortFunctionsOnASingleLine: Empty
 AllowShortIfStatementsOnASingleLine: AllIfsAndElse
 AllowShortLambdasOnASingleLine: Empty
 AllowShortLoopsOnASingleLine: true
-AlwaysBreakAfterDefinitionReturnType: All
-AlwaysBreakAfterReturnType: All
+AlwaysBreakAfterDefinitionReturnType: None
+AlwaysBreakAfterReturnType: None
 AlwaysBreakBeforeMultilineStrings: false
 AlwaysBreakTemplateDeclarations: No
 AttributeMacros:

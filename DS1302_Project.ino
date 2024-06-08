@@ -48,8 +48,7 @@ int currentAdjustPosition = 0;  // 0: Year, 1: Month, 2: Day, 3: Hour, 4: Minute
 RtcDateTime settingTime;        // 設定的時間
 
 
-void
-setup()
+void setup()
 {
   Serial.begin(57600);
   // setupDS1302(Rtc);  // 初始化 DS1302, 只需要在第一次執行時加入就可以了
@@ -74,8 +73,7 @@ setup()
   prevTimeA = millis();
   prevTimeB = millis();
 }
-void
-loop()
+void loop()
 {
   RtcDateTime now = now = Rtc.GetDateTime();  // 獲取當前 DS1302 的時間
   int year = now.Year();
@@ -108,7 +106,7 @@ loop()
     }
   }
   // ----------------------------------------------------//
-  // 模擬輸入, 可設定時間
+  //
   if (Serial.available())
   {
     String input = Serial.readString();
@@ -140,8 +138,7 @@ loop()
     case showMS: displayMS(now); break;      // 分鐘 + 秒
   }
 }
-void
-flashA()  // 硬體中斷, 切換狀態的按鈕
+void flashA()  // 硬體中斷, 切換狀態的按鈕
 {
   if (millis() - prevTimeA > debounceDelay)
   {
@@ -149,8 +146,7 @@ flashA()  // 硬體中斷, 切換狀態的按鈕
     curState = (curState + 1) % stateSize;
   }
 }
-void
-flashB()
+void flashB()
 {
   unsigned long currentTime = millis();
   if (currentTime - lastInterruptTimeB > debounceDelay)
