@@ -17,7 +17,7 @@ const int D2 = 13;
 const int D3 = A0;
 const int D4 = A1;
 
-// 按鈕, 避免 debounce, 若要中斷, 需要使用 2, 3 Pin腳
+// 按鈕, 避免 debounce, 若要中斷, 需要使用 2, 3 Pin 腳
 #define buttonA 2
 #define buttonB 3
 unsigned long prevTimeA = 0;
@@ -28,7 +28,7 @@ volatile bool buttonPressedB = false;  // 預設為沒按下
 volatile unsigned long pressStartTimeB = 0;
 volatile unsigned long pressDurationB = 0;
 volatile unsigned long lastInterruptTimeB = 0;
-//長按設定為 1000 ms 
+//長按設定為 1000 ms
 const unsigned long longPressInterval = 1000;
 const unsigned long debounceDelay = 50;
 // 連接 DS1302
@@ -43,12 +43,16 @@ const int showMS = 3;
 const int stateSize = 4;  // 加入 state 需要更改
 int curState = 3;
 
-bool settingMode = false;  // 設定模式標誌
-int settingItem = 0;       // 當前設定項目
+bool settingMode = false;       // 設定模式
+int currentAdjustPosition = 0;  // 0: Year, 1: Month, 2: Day, 3: Hour, 4: Minute, 5: Second
+RtcDateTime settingTime;        // 設定的時間
 
-void setup() {
+
+void
+setup()
+{
   Serial.begin(57600);
-  setupDS1302(Rtc);  // 初始化 DS1302, 只需要在第一次執行時加入就可以了
+  // setupDS1302(Rtc);  // 初始化 DS1302, 只需要在第一次執行時加入就可以了
 
   pinMode(pinA, OUTPUT);  // 顯示器的七個位置
   pinMode(pinB, OUTPUT);
@@ -70,7 +74,9 @@ void setup() {
   prevTimeA = millis();
   prevTimeB = millis();
 }
-void loop() {
+void
+loop()
+{
   RtcDateTime now = now = Rtc.GetDateTime();  // 獲取當前 DS1302 的時間
   int year = now.Year();
   int month = now.Month();
@@ -78,62 +84,78 @@ void loop() {
   int hour = now.Hour();
   int minutes = now.Minute();
   int seconds = now.Second();
-  if(buttonPressedB)
+  if (buttonPressedB)
   {
     noInterrupts();
     unsigned long duration = pressDurationB;
     buttonPressedB = false;
     interrupts();
-    if(duration >= longPressInterval)
+    if (duration >= longPressInterval)
     {
-      Serial.println("Long Press Detected");
+      // 長按 (切換設定模式)
+      Serial.println("偵測到長按!");
+      settingMode = !settingMode;
     }
     else
     {
-      Serial.println("Short Press Detected");
+      // 短按 (在設定模式才有用處, 用於切換當前設定位數)
+      Serial.println("偵測到短按!");
+      if (settingMode == true)  // 正在設定時間, 短按按鈕 B
+      {
+        currentAdjustPosition += 1;
+        currentAdjustPosition %= 6;  // 年月日時分表, 共六種
+      }
     }
   }
-  // ----------------------------------------------------模擬輸入, 可設定時間 //
-  if (Serial.available()) {
+  // ----------------------------------------------------//
+  // 模擬輸入, 可設定時間
+  if (Serial.available())
+  {
     String input = Serial.readString();
-    if (input.length() == 14) {  // 確保輸入的長度正確
+    if (input.length() == 14)
+    {  // 確保輸入的長度正確
       int newYear = input.substring(0, 4).toInt();
       int newMonth = input.substring(4, 6).toInt();
       int newDay = input.substring(6, 8).toInt();
       int newHour = input.substring(8, 10).toInt();
       int newMinute = input.substring(10, 12).toInt();
       int newSecond = input.substring(12, 14).toInt();
-
       RtcDateTime newTime = RtcDateTime(newYear, newMonth, newDay, newHour, newMinute, newSecond);
       Rtc.SetDateTime(newTime);
       now = newTime;
-
-      Serial.println("Date and time updated.");
-    } else {
-      Serial.println("Invalid input. Please enter date and time as YYYYMMDDHHMMSS:");
+      Serial.println("時間更新成功!");
+    }
+    else
+    {
+      Serial.println("錯誤的輸入: 型態應為 YYYYMMDDHHMMSS:");
     }
   }
   // ---------------------------------------------------- //
   // 列印結果
-  switch (curState) {
+  switch (curState)
+  {
     case showYear: displayYear(now); break;  // 顯示年份
     case showMonth: displayMD(now); break;   // 月份 + 日期
     case showHM: displayHM(now); break;      // 小時 + 分鐘
     case showMS: displayMS(now); break;      // 分鐘 + 秒
   }
 }
-void flashA()  // 硬體中斷, 切換狀態的按鈕
+void
+flashA()  // 硬體中斷, 切換狀態的按鈕
 {
-  if (millis() - prevTimeA > debounceDelay) {
+  if (millis() - prevTimeA > debounceDelay)
+  {
     prevTimeA = millis();
     curState = (curState + 1) % stateSize;
   }
 }
-void flashB() {
+void
+flashB()
+{
   unsigned long currentTime = millis();
-  if(currentTime - lastInterruptTimeB > debounceDelay)
+  if (currentTime - lastInterruptTimeB > debounceDelay)
   {
-    if(digitalRead(buttonB) == LOW)
+    if (digitalRead(buttonB) == LOW)
     {
       pressStartTimeB = currentTime;
     }
