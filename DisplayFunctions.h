@@ -10,17 +10,20 @@ void printDateTime(const RtcDateTime &dt);
 
 void displayYear(RtcDateTime now);
 void displayMD(RtcDateTime now);
-void displayHM(RtcDateTime now);
+void displayHM(RtcDateTime now, bool is12HourFormat);
 void displayMS(RtcDateTime now);
 
+void displayMonth(RtcDateTime now);
 void displayDay(RtcDateTime now);
-void displayHour(RtcDateTime now);
+void displayHour(RtcDateTime now, bool is12HourFormat);
 void displayMinute(RtcDateTime now);
 void displaySecond(RtcDateTime now);
 
 void displayDigitAtPosition(int digit, int position);
 void displayDigit(int digit);
 
+void SegA();
+void SegP();
 void Seg0();
 void Seg1();
 void Seg2();

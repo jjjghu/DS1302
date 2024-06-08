@@ -15,7 +15,8 @@ extern const int D2;
 extern const int D3;
 extern const int D4;
 
-void setupDS1302(RtcDS1302<ThreeWire> Rtc) {
+void setupDS1302(RtcDS1302<ThreeWire> Rtc)
+{
   Serial.print("compiled: ");
   Serial.print(__DATE__);
   Serial.println(__TIME__);
@@ -25,29 +26,38 @@ void setupDS1302(RtcDS1302<ThreeWire> Rtc) {
   RtcDateTime compiled = RtcDateTime(__DATE__, __TIME__);
   printDateTime(compiled);
   Serial.println();
-  if (!Rtc.IsDateTimeValid()) {
+  if (!Rtc.IsDateTimeValid())
+  {
     Serial.println("RTC lost confidence in the DateTime!");
     Rtc.SetDateTime(compiled);
   }
-  if (Rtc.GetIsWriteProtected()) {
+  if (Rtc.GetIsWriteProtected())
+  {
     Serial.println("RTC was write protected, enabling writing now");
     Rtc.SetIsWriteProtected(false);
   }
-  if (!Rtc.GetIsRunning()) {
+  if (!Rtc.GetIsRunning())
+  {
     Serial.println("RTC was not actively running, starting now");
     Rtc.SetIsRunning(true);
   }
   RtcDateTime now = Rtc.GetDateTime();
-  if (now < compiled) {
+  if (now < compiled)
+  {
     Serial.println("RTC is older than compile time!  (Updating DateTime)");
     Rtc.SetDateTime(compiled);
-  } else if (now > compiled) {
+  }
+  else if (now > compiled)
+  {
     Serial.println("RTC is newer than compile time. (this is expected)");
-  } else if (now == compiled) {
+  }
+  else if (now == compiled)
+  {
     Serial.println("RTC is the same as compile time! (not expected but all is fine)");
   }
 }
-void printDateTime(const RtcDateTime &dt) {
+void printDateTime(const RtcDateTime &dt)
+{
   char datestring[20];
   snprintf_P(datestring,
              sizeof(datestring),
@@ -60,7 +70,8 @@ void printDateTime(const RtcDateTime &dt) {
              dt.Second());
   Serial.print(datestring);
 }
-void displayYear(RtcDateTime now) {
+void displayYear(RtcDateTime now)
+{
   int year = now.Year();
   int yearThousands = year / 1000;
   int yearHundreds = (year / 100) % 10;
@@ -72,7 +83,8 @@ void displayYear(RtcDateTime now) {
   displayDigitAtPosition(yearTens, D3);
   displayDigitAtPosition(yearUnits, D4);
 }
-void displayMD(RtcDateTime now) {
+void displayMD(RtcDateTime now)
+{
   int month = now.Month();
   int day = now.Day();
   int monthTens = month / 10;
@@ -85,7 +97,8 @@ void displayMD(RtcDateTime now) {
   displayDigitAtPosition(dayTens, D3);
   displayDigitAtPosition(dayUnits, D4);
 }
-void displayHM(RtcDateTime now) {
+void displayHM(RtcDateTime now)
+{
   int hour = now.Hour();
   int minutes = now.Minute();
   int hourTens = hour / 10;
@@ -98,7 +111,8 @@ void displayHM(RtcDateTime now) {
   displayDigitAtPosition(minuteTens, D3);
   displayDigitAtPosition(minuteUnits, D4);
 }
-void displayMS(RtcDateTime now) {
+void displayMS(RtcDateTime now)
+{
   int minutes = now.Minute();
   int seconds = now.Second();
   int minuteTens = minutes / 10;
@@ -111,47 +125,85 @@ void displayMS(RtcDateTime now) {
   displayDigitAtPosition(secondTens, D3);
   displayDigitAtPosition(secondUnits, D4);
 }
-void displayDay(RtcDateTime now) {
+void displayMonth(RtcDateTime now)
+{
+  int months = now.Month();
+  int monthTens = months / 10;
+  int monthUnits = months % 10;
+
+  displayDigitAtPosition(monthTens, D3);
+  displayDigitAtPosition(monthUnits, D4);
+}
+void displayDay(RtcDateTime now)
+{
   int day = now.Day();
   int dayTens = day / 10;
   int dayUnits = day % 10;
 
-  displayDigitAtPosition(dayTens, D1);
-  displayDigitAtPosition(dayUnits, D2);
-  displayDigitAtPosition(0, D3);
-  displayDigitAtPosition(0, D4);
+  displayDigitAtPosition(dayTens, D3);
+  displayDigitAtPosition(dayUnits, D4);
 }
-void displayHour(RtcDateTime now) {
-  int hour = now.Hour();
-  int hourTens = hour / 10;
-  int hourUnits = hour % 10;
+void displayHour(RtcDateTime now, bool is12HourFormat)
+{
+  int hour = now.Hour();  // 0 ~ 23
 
-  displayDigitAtPosition(hourTens, D1);
-  displayDigitAtPosition(hourUnits, D2);
-  displayDigitAtPosition(0, D3);
-  displayDigitAtPosition(0, D4);
+  if (is12HourFormat)
+  {
+    bool isPM = hour >= 12;
+    if (hour == 0)
+    {
+      hour = 12; // 0 點
+    }
+    else if (hour > 12)
+    {
+      hour -= 12;  // Convert to 12 hour format
+    }
+    int hourTens = hour / 10;
+    int hourUnits = hour % 10;
+
+    displayDigitAtPosition(hourTens, D2);
+    displayDigitAtPosition(hourUnits, D3);
+
+    // 顯示 A, P 代表早上或是晚上
+    if (isPM)
+    {
+      displayDigitAtPosition(11, D4);  // P = 11
+    }
+    else
+    {
+      displayDigitAtPosition(10, D4);  // A = 10
+    }
+  }
+  else
+  {
+    // 普通顯示
+    int hourTens = hour / 10;
+    int hourUnits = hour % 10;
+
+    displayDigitAtPosition(hourTens, D3);
+    displayDigitAtPosition(hourUnits, D4);
+  }
 }
-void displayMinute(RtcDateTime now) {
+void displayMinute(RtcDateTime now)
+{
   int minutes = now.Minute();
   int minuteTens = minutes / 10;
   int minuteUnits = minutes % 10;
 
-  displayDigitAtPosition(minuteTens, D1);
-  displayDigitAtPosition(minuteUnits, D2);
-  displayDigitAtPosition(0, D3);
-  displayDigitAtPosition(0, D4);
+  displayDigitAtPosition(minuteTens, D3);
+  displayDigitAtPosition(minuteUnits, D4);
 }
-void displaySecond(RtcDateTime now) {
+void displaySecond(RtcDateTime now)
+{
   int seconds = now.Second();
   int secondTens = seconds / 10;
   int secondUnits = seconds % 10;
 
-  displayDigitAtPosition(secondTens, D1);
-  displayDigitAtPosition(secondUnits, D2);
-  displayDigitAtPosition(0, D3);
-  displayDigitAtPosition(0, D4);
+  displayDigitAtPosition(secondTens, D3);
+  displayDigitAtPosition(secondUnits, D4);
 }
-void displayDigitAtPosition(int digit, int position) {
+void displayDigitAtPosition(int digit, int position)
+{
   // 根據需要選擇顯示的位置
   digitalWrite(D1, HIGH);
   digitalWrite(D2, HIGH);
@@ -164,7 +216,8 @@ void displayDigitAtPosition(int digit, int position) {
 }
 void displayDigit(int digit)  // 顯示對應數字
 {
-  switch (digit) {
+  switch (digit)
+  {
     case 0:
       Seg0();
       break;
@@ -195,9 +248,35 @@ void displayDigit(int digit)  // 顯示對應數字
     case 9:
       Seg9();
       break;
+    case 10:
+      SegA();
+    case 11:
+      SegP();
   }
 }
-void Seg0() {
+// 10 代表 A, 11 代表 P
+void SegA()
+{
+  digitalWrite(pinA, HIGH);
+  digitalWrite(pinB, HIGH);
+  digitalWrite(pinC, LOW);
+  digitalWrite(pinD, HIGH);
+  digitalWrite(pinE, HIGH);
+  digitalWrite(pinF, HIGH);
+  digitalWrite(pinG, HIGH);
+}
+void SegP()
+{
+  digitalWrite(pinA, HIGH);
+  digitalWrite(pinB, HIGH);
+  digitalWrite(pinC, LOW);
+  digitalWrite(pinD, LOW);
+  digitalWrite(pinE, HIGH);
+  digitalWrite(pinF, HIGH);
+  digitalWrite(pinG, HIGH);
+}
+void Seg0()
+{
   digitalWrite(pinA, HIGH);
   digitalWrite(pinB, HIGH);
   digitalWrite(pinC, HIGH);
@@ -206,7 +285,8 @@ void Seg0() {
   digitalWrite(pinF, HIGH);
   digitalWrite(pinG, LOW);
 }
-void Seg1() {
+void Seg1()
+{
   digitalWrite(pinA, LOW);
   digitalWrite(pinB, HIGH);
   digitalWrite(pinC, HIGH);
@@ -215,7 +295,8 @@ void Seg1() {
   digitalWrite(pinF, LOW);
   digitalWrite(pinG, LOW);
 }
-void Seg2() {
+void Seg2()
+{
   digitalWrite(pinA, HIGH);
   digitalWrite(pinB, HIGH);
   digitalWrite(pinC, LOW);
@@ -224,7 +305,8 @@ void Seg2() {
   digitalWrite(pinF, LOW);
   digitalWrite(pinG, HIGH);
 }
-void Seg3() {
+void Seg3()
+{
   digitalWrite(pinA, HIGH);
   digitalWrite(pinB, HIGH);
   digitalWrite(pinC, HIGH);
@@ -233,7 +315,8 @@ void Seg3() {
   digitalWrite(pinF, LOW);
   digitalWrite(pinG, HIGH);
 }
-void Seg4() {
+void Seg4()
+{
   digitalWrite(pinA, LOW);
   digitalWrite(pinB, HIGH);
   digitalWrite(pinC, HIGH);
@@ -242,7 +325,8 @@ void Seg4() {
   digitalWrite(pinF, HIGH);
   digitalWrite(pinG, HIGH);
 }
-void Seg5() {
+void Seg5()
+{
   digitalWrite(pinA, HIGH);
   digitalWrite(pinB, LOW);
   digitalWrite(pinC, HIGH);
@@ -251,7 +335,8 @@ void Seg5() {
   digitalWrite(pinF, HIGH);
   digitalWrite(pinG, HIGH);
 }
-void Seg6() {
+void Seg6()
+{
   digitalWrite(pinA, HIGH);
   digitalWrite(pinB, LOW);
   digitalWrite(pinC, HIGH);
@@ -260,7 +345,8 @@ void Seg6() {
   digitalWrite(pinF, HIGH);
   digitalWrite(pinG, HIGH);
 }
-void Seg7() {
+void Seg7()
+{
   digitalWrite(pinA, HIGH);
   digitalWrite(pinB, HIGH);
   digitalWrite(pinC, HIGH);
@@ -269,7 +355,8 @@ void Seg7() {
   digitalWrite(pinF, LOW);
   digitalWrite(pinG, LOW);
 }
-void Seg8() {
+void Seg8()
+{
   digitalWrite(pinA, HIGH);
   digitalWrite(pinB, HIGH);
   digitalWrite(pinC, HIGH);
@@ -278,7 +365,8 @@ void Seg8() {
   digitalWrite(pinF, HIGH);
   digitalWrite(pinG, HIGH);
 }
-void Seg9() {
+void Seg9()
+{
   digitalWrite(pinA, HIGH);
   digitalWrite(pinB, HIGH);
   digitalWrite(pinC, HIGH);

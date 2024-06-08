@@ -24,34 +24,38 @@ unsigned long prevTimeA = 0;
 unsigned long prevTimeB = 0;
 
 // 按鈕 B 需要判斷長按
+bool is12HourFormat = false; // 預設為 24 小時制
 volatile bool buttonPressedB = false;  // 預設為沒按下
 volatile unsigned long pressStartTimeB = 0;
 volatile unsigned long pressDurationB = 0;
 volatile unsigned long lastInterruptTimeB = 0;
+
 //長按設定為 1000 ms
 const unsigned long longPressInterval = 1000;
-const unsigned long debounceDelay = 50;
+const unsigned long debounceDelay = 200;
 // 連接 DS1302
 ThreeWire myWire(IO, SCLK, CE);  // IO, SCLK, CE
 RtcDS1302<ThreeWire> Rtc(myWire);
 
 // 當前顯示狀態
 const int showYear = 0;
-const int showMonth = 1;
-const int showHM = 2;
-const int showMS = 3;
-const int stateSize = 4;  // 加入 state 需要更改
-int curState = 3;
 
-bool settingMode = false;       // 設定模式
-int currentAdjustPosition = 0;  // 0: Year, 1: Month, 2: Day, 3: Hour, 4: Minute, 5: Second
-RtcDateTime settingTime;        // 設定的時間
+const int showMonth = 1;  // 設定時的狀態
+const int showDay = 2;
+const int showHour = 3;
+const int showMinute = 4;
+const int showSecond = 5;
+const int stateSize = 6;  // 設定時的 State 大小
 
+int curState = 0;  // 初始狀態
+
+// 設定
+bool settingMode = false;  // 設定模式
 
 void setup()
 {
   Serial.begin(57600);
-  // setupDS1302(Rtc);  // 初始化 DS1302, 只需要在第一次執行時加入就可以了
+  setupDS1302(Rtc);  // 初始化 DS1302, 只需要在第一次執行時加入就可以了
 
   pinMode(pinA, OUTPUT);  // 顯示器的七個位置
   pinMode(pinB, OUTPUT);
@@ -76,13 +80,8 @@ void setup()
 void loop()
 {
   RtcDateTime now = now = Rtc.GetDateTime();  // 獲取當前 DS1302 的時間
-  int year = now.Year();
-  int month = now.Month();
-  int day = now.Day();
-  int hour = now.Hour();
-  int minutes = now.Minute();
-  int seconds = now.Second();
-  if (buttonPressedB)
+
+  if (buttonPressedB)  // 按鈕 B 的長短按判斷, 根據 settineMode 的長短按有不同的效果
   {
     noInterrupts();
     unsigned long duration = pressDurationB;
@@ -92,58 +91,88 @@ void loop()
     {
       // 長按 (切換設定模式)
       Serial.println("偵測到長按!");
-      settingMode = !settingMode;
+      settingMode = !settingMode;      // 轉換模式
+      Rtc.SetIsRunning(!settingMode);  // SettingMode = true, 停止計時, settingMode = false, 繼續計時
+      curState = 0;                    // 顯示狀態設為 0
     }
     else
     {
       // 短按 (在設定模式才有用處, 用於切換當前設定位數)
       Serial.println("偵測到短按!");
-      if (settingMode == true)  // 正在設定時間, 短按按鈕 B
+      if (settingMode == true)  // 正在設定時間, 短按按鈕 B, 增加當前數字
       {
-        currentAdjustPosition += 1;
-        currentAdjustPosition %= 6;  // 年月日時分表, 共六種
+        settingTime(now);
+      }
+      else
+      {
+        is12HourFormat = !is12HourFormat; // 轉換小時制
       }
     }
   }
-  // ----------------------------------------------------//
-  //
-  if (Serial.available())
-  {
-    String input = Serial.readString();
-    if (input.length() == 14)
-    {  // 確保輸入的長度正確
-      int newYear = input.substring(0, 4).toInt();
-      int newMonth = input.substring(4, 6).toInt();
-      int newDay = input.substring(6, 8).toInt();
-      int newHour = input.substring(8, 10).toInt();
-      int newMinute = input.substring(10, 12).toInt();
-      int newSecond = input.substring(12, 14).toInt();
-      RtcDateTime newTime = RtcDateTime(newYear, newMonth, newDay, newHour, newMinute, newSecond);
-      Rtc.SetDateTime(newTime);
-      now = newTime;
-      Serial.println("時間更新成功!");
-    }
-    else
-    {
-      Serial.println("錯誤的輸入: 型態應為 YYYYMMDDHHMMSS:");
-    }
-  }
-  // ---------------------------------------------------- //
   // 列印結果
+  printResult(now);
+}
+void settingTime(RtcDateTime &now)
+{
+  int year = now.Year() % 100;  // 取後面兩位數
+  int month = now.Month();
+  int day = now.Day();
+  int hour = now.Hour();
+  int minute = now.Minute();
+  int second = now.Second();
+
+  switch (curState)  // 查看現在的顯示狀態
+  {
+    case showYear:
+      if (year == 99) year = 0;
+      else year += 1;
+      break;  // 年
+    case showMonth:
+      if (month == 12) month = 1;
+      else month += 1;
+      break;  // 月
+    case showDay:
+      if (day == 12) day = 1;
+      else day += 1;
+      break;  // 日
+    case showHour:
+      hour = (hour + 1) % 24;
+      break;  // 時
+    case showMinute:
+      minute = (minute + 1) % 60;
+      break;  // 分
+    case showSecond:
+      second = (second + 1) % 60;
+      break;  // 秒
+    default:
+      Serial.println("例外發生!");
+      return;
+  }
+
+  // 使用具體的日期和時間值來建立新的 RtcDateTime 對象
+  now = RtcDateTime(2000 + year, month, day, hour, minute, second);
+
+  // 設置 RTC 時間
+  Rtc.SetDateTime(now);
+}
+void printResult(RtcDateTime &now)
+{
   switch (curState)
   {
-    case showYear: displayYear(now); break;  // 顯示年份
-    case showMonth: displayMD(now); break;   // 月份 + 日期
-    case showHM: displayHM(now); break;      // 小時 + 分鐘
-    case showMS: displayMS(now); break;      // 分鐘 + 秒
+    case showYear: displayYear(now); break;      // 年
+    case showMonth: displayMonth(now); break;    // 月
+    case showDay: displayDay(now); break;        // 日
+    case showHour: displayHour(now, is12HourFormat); break;      // 時
+    case showMinute: displayMinute(now); break;  // 分
+    case showSecond: displaySecond(now); break;  // 秒
   }
 }
 void flashA()  // 硬體中斷, 切換狀態的按鈕
 {
   if (millis() - prevTimeA > debounceDelay)
   {
+    curState = (curState + 1) % stateSize;  // 普通顯示的範圍縣市
     prevTimeA = millis();
-    curState = (curState + 1) % stateSize;
   }
 }
 void flashB()

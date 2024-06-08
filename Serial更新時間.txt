@@ -1,0 +1,22 @@
+
+  // Serial 輸入更新時間
+  if (Serial.available())
+  {
+    String input = Serial.readString();
+    if (input.length() == 14)
+    {  // 確保輸入的長度正確
+      int newYear = input.substring(0, 4).toInt();
+      int newMonth = input.substring(4, 6).toInt();
+      int newDay = input.substring(6, 8).toInt();
+      int newHour = input.substring(8, 10).toInt();
+      int newMinute = input.substring(10, 12).toInt();
+      int newSecond = input.substring(12, 14).toInt();
+      RtcDateTime newTime = RtcDateTime(newYear, newMonth, newDay, newHour, newMinute, newSecond);
+      Rtc.SetDateTime(newTime);
+      now = newTime;
+      Serial.println("時間更新成功!");
+    }
+    else
+    {
+      Serial.println("錯誤的輸入: 型態應為 YYYYMMDDHHMMSS:");
+    }
